@@ -96,6 +96,13 @@ private:
 		}
 	};
 
+	void InitGridModels();
+	const float gridMin = -10.0f;
+	const float gridMax = 10.0f;
+	const float gridStep = 1.0f;
+	Model gridXY;
+	Model gridXZ;
+
 	const float t_num = 100000;
 	Model arhimedesModel;
 	Model fermatModel;

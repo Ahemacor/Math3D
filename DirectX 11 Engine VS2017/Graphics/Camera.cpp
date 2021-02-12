@@ -77,7 +77,7 @@ const XMMATRIX Camera::GetProjectionMatrix()
 
 void Camera::SetProjectionValues(float FOV, float width, float height, float nearZ, float farZ)
 {
-	this->projectionMatrix = XMMatrixPerspectiveFovLH((FOV / 180)*3.14f, (float)width / height, nearZ, farZ); //90 degree field of view
+	this->projectionMatrix = XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(FOV) , (float)width / height, nearZ, farZ);
 }
 
 const XMVECTOR & Camera::GetForwardVector()

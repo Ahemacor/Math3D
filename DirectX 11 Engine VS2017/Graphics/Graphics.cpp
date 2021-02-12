@@ -32,7 +32,7 @@ void Graphics::RenderFunctionsImGui()
 	ImGui::NewFrame();
 
 	static bool my_tool_active = true;
-	ImGui::Begin("Debugging Window", &my_tool_active, ImGuiWindowFlags_MenuBar);
+	ImGui::Begin("Options window", &my_tool_active, ImGuiWindowFlags_MenuBar);
 
 	ImGui::Checkbox("Render X-Y Axis", &renderXYaxis);
 	ImGui::Checkbox("Render X-Z Axis", &renderXZaxis);
@@ -78,7 +78,7 @@ void Graphics::RenderFunctionsImGui()
 		static float param[] = { 0, 400, 1 };
 
 		ImGui::Text("Fermat's spiral:");
-		ImGui::Text("r = %d*sqrt(phi);    phi[%f, %f]", param[A], param[MIN], param[MAX]);
+		ImGui::Text("r = %f*sqrt(phi);    phi[%f, %f]", param[A], param[MIN], param[MAX]);
 
 		ImGui::SliderFloat("Max", &param[MAX], 0.0f, 400.0f);
 		ImGui::SliderFloat("a", &param[A], -10.0f, 10.0f);
@@ -93,12 +93,12 @@ void Graphics::RenderFunctionsImGui()
 	case BERNOULLI:
 	{
 		enum { MIN, MAX, A };
-		static float param[] = { 0, 10, 1 };
+		static float param[] = { -3.14159f, 3.14159f, 1 };
 		static int scale = 2;
 		ImGui::Text("Lemniscate of Bernoulli:");
 		ImGui::Text(" r ^ 2 = %f ^ 2 * cos(%d * phi);    phi[%f, %f]", param[A], scale, param[MIN], param[MAX]);
-		ImGui::SliderFloat("Min", &param[MIN], -10.0f, 10.0f);
-		ImGui::SliderFloat("Max", &param[MAX], -10.0f, 10.0f);
+		ImGui::SliderFloat("Min", &param[MIN], -3.14159f, 0.0f);
+		ImGui::SliderFloat("Max", &param[MAX], 0.0f, 3.14159f);
 		ImGui::SliderFloat("a", &param[A], 0.0f, 20.0f);
 		ImGui::SliderInt("scale", &scale, 0, 100);
 
@@ -117,6 +117,8 @@ void Graphics::RenderFunctionsImGui()
 
 	ImGui::NewLine();
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	ImGui::NewLine();
+	ImGui::Text("Camera control: [WASD] [Space] [Z] [Hold right mouse button]");
 	ImGui::End();
 
 	ImGui::Render();
@@ -152,16 +154,16 @@ void Graphics::InitArhimedeslModel()
 	}
 
 	HRESULT hr = model.vertices.Initialize(this->device.Get(), vertices.data(), vertices.size());
-	if (FAILED(hr)) ErrorLogger::Log(hr, "Failed to create vertex buffer for textured square.");
+	if (FAILED(hr)) ErrorLogger::Log(hr, "Failed to create vertex buffer for ArhimedeslModel.");
 
 	std::vector<DWORD> indices(vertices.size());
 	std::iota(indices.begin(), indices.end(), 0);
 
 	hr = model.indices.Initialize(this->device.Get(), indices.data(), indices.size());
-	if (FAILED(hr)) ErrorLogger::Log(hr, "Failed to create indices buffer for textured square.");
+	if (FAILED(hr)) ErrorLogger::Log(hr, "Failed to create indices buffer for ArhimedeslModel.");
 
 	hr = model.cb.Initialize(this->device.Get(), this->deviceContext.Get());
-	if (FAILED(hr)) ErrorLogger::Log(hr, "Failed to create constant buffer.");
+	if (FAILED(hr)) ErrorLogger::Log(hr, "Failed to create constant buffer for ArhimedeslModel.");
 }
 
 void Graphics::UpdateArhimedesModel(float a, float t_min, float t_max, const XMFLOAT4& color)
@@ -225,16 +227,16 @@ void Graphics::InitFermatModel()
 	}
 
 	HRESULT hr = model.vertices.Initialize(this->device.Get(), vertices.data(), vertices.size());
-	if (FAILED(hr)) ErrorLogger::Log(hr, "Failed to create vertex buffer for textured square.");
+	if (FAILED(hr)) ErrorLogger::Log(hr, "Failed to create vertex buffer for FermatModel.");
 
 	std::vector<DWORD> indices(vertices.size());
 	std::iota(indices.begin(), indices.end(), 0);
 
 	hr = model.indices.Initialize(this->device.Get(), indices.data(), indices.size());
-	if (FAILED(hr)) ErrorLogger::Log(hr, "Failed to create indices buffer for textured square.");
+	if (FAILED(hr)) ErrorLogger::Log(hr, "Failed to create indices buffer for FermatModel.");
 
 	hr = model.cb.Initialize(this->device.Get(), this->deviceContext.Get());
-	if (FAILED(hr)) ErrorLogger::Log(hr, "Failed to create constant buffer.");
+	if (FAILED(hr)) ErrorLogger::Log(hr, "Failed to create constant buffer for FermatModel.");
 }
 
 void Graphics::UpdateFermatModel(float a, float t_min, float t_max, const XMFLOAT4& color)
@@ -300,16 +302,16 @@ void Graphics::InitLemniscateOfBernoulliModel()
 	}
 
 	HRESULT hr = model.vertices.Initialize(this->device.Get(), vertices.data(), vertices.size());
-	if (FAILED(hr)) ErrorLogger::Log(hr, "Failed to create vertex buffer for textured square.");
+	if (FAILED(hr)) ErrorLogger::Log(hr, "Failed to create vertex buffer for LemniscateOfBernoulliModel.");
 
 	std::vector<DWORD> indices(vertices.size());
 	std::iota(indices.begin(), indices.end(), 0);
 
 	hr = model.indices.Initialize(this->device.Get(), indices.data(), indices.size());
-	if (FAILED(hr)) ErrorLogger::Log(hr, "Failed to create indices buffer for textured square.");
+	if (FAILED(hr)) ErrorLogger::Log(hr, "Failed to create indices buffer for LemniscateOfBernoulliModel.");
 
 	hr = model.cb.Initialize(this->device.Get(), this->deviceContext.Get());
-	if (FAILED(hr)) ErrorLogger::Log(hr, "Failed to create constant buffer.");
+	if (FAILED(hr)) ErrorLogger::Log(hr, "Failed to create constant buffer for LemniscateOfBernoulliModel.");
 }
 
 void Graphics::UpdateLemniscateOfBernoulliModel(float a, float t_min, float t_max, float phi_scale, const XMFLOAT4& color)
@@ -336,10 +338,56 @@ void Graphics::UpdateLemniscateOfBernoulliModel(float a, float t_min, float t_ma
 	model.vertices.Update(deviceContext.Get(), vertices.data(), vertices.size());
 }
 
+void Graphics::InitGridModels()
+{
+	const XMFLOAT4 gridColor = { 0.3f, 0.3f, 0.3f, 1.0f };
+
+	Model& model = gridXY;
+	model.vs = commonVS;
+	model.ps = coloredPS;
+	model.topology = D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_LINELIST;
+	model.transformatin = XMMatrixIdentity();
+
+	const int numOfLines = (gridMax - gridMin) / gridStep;
+
+	std::vector<VertexCommon> vertices;
+	vertices.emplace_back(gridMin, 0, 0, gridColor.x*2, gridColor.y*2, gridColor.z*2, gridColor.w);
+	vertices.emplace_back(gridMax, 0, 0, gridColor.x*2, gridColor.y*2, gridColor.z*2, gridColor.w);
+	vertices.emplace_back(0, gridMin, 0, gridColor.x*2, gridColor.y*2, gridColor.z*2, gridColor.w);
+	vertices.emplace_back(0, gridMax, 0, gridColor.x*2, gridColor.y*2, gridColor.z*2, gridColor.w);
+
+	for (int i = 1; i <= numOfLines/2; ++i)
+	{
+		vertices.emplace_back(gridMin, gridStep*i, 0, gridColor.x, gridColor.y, gridColor.z, gridColor.w);
+		vertices.emplace_back(gridMax, gridStep*i, 0, gridColor.x, gridColor.y, gridColor.z, gridColor.w);
+
+		vertices.emplace_back(gridMin, -gridStep*i, 0, gridColor.x, gridColor.y, gridColor.z, gridColor.w);
+		vertices.emplace_back(gridMax, -gridStep*i, 0, gridColor.x, gridColor.y, gridColor.z, gridColor.w);
+
+		vertices.emplace_back(gridStep*i, gridMin, 0, gridColor.x, gridColor.y, gridColor.z, gridColor.w);
+		vertices.emplace_back(gridStep*i, gridMax, 0, gridColor.x, gridColor.y, gridColor.z, gridColor.w);
+
+		vertices.emplace_back(-gridStep*i, gridMin, 0, gridColor.x, gridColor.y, gridColor.z, gridColor.w);
+		vertices.emplace_back(-gridStep*i, gridMax, 0, gridColor.x, gridColor.y, gridColor.z, gridColor.w);
+	}
+
+	HRESULT hr = model.vertices.Initialize(this->device.Get(), vertices.data(), vertices.size());
+	if (FAILED(hr)) ErrorLogger::Log(hr, "Failed to create vertex buffer for grid.");
+
+	std::vector<DWORD> indices(vertices.size());
+	std::iota(indices.begin(), indices.end(), 0);
+
+	hr = model.indices.Initialize(this->device.Get(), indices.data(), indices.size());
+	if (FAILED(hr)) ErrorLogger::Log(hr, "Failed to create indices buffer for grid.");
+
+	hr = model.cb.Initialize(this->device.Get(), this->deviceContext.Get());
+	if (FAILED(hr)) ErrorLogger::Log(hr, "Failed to create constant buffer for grid.");
+}
+
 void Graphics::RenderFrame()
 {
 	// Setup common rendering.
-	float bgcolor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	float bgcolor[] = { 0.1f, 0.1f, 0.1f, 1.0f };
 	this->deviceContext->ClearRenderTargetView(this->renderTargetView.Get(), bgcolor);
 	this->deviceContext->ClearDepthStencilView(this->depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	this->deviceContext->RSSetState(this->rasterizerState.Get());
@@ -361,7 +409,7 @@ void Graphics::RenderFrame()
 	
 	if (renderXZaxis) this->deviceContext->Draw(this->vb_grid.BufferSize()/2, 0);
 
-	if (renderXYaxis) this->deviceContext->Draw(this->vb_grid.BufferSize() / 2, this->vb_grid.BufferSize() / 2);
+	if (renderXYaxis) gridXY.draw(deviceContext, camera);//this->deviceContext->Draw(this->vb_grid.BufferSize() / 2, this->vb_grid.BufferSize() / 2);
 
 	// Render UI tool.
 	RenderFunctionsImGui();
@@ -593,6 +641,8 @@ bool Graphics::InitializeShaders()
 
 bool Graphics::InitializeScene()
 {
+	const XMFLOAT4 gridColor = {1.0f, 1.0f, 1.0f, 1.0f};
+
 	//Set up constant buffer for vertex shader
 	HRESULT hr = cb_vs_vertexshader.Initialize(this->device.Get(), this->deviceContext.Get());
 	if (FAILED(hr))
@@ -637,10 +687,11 @@ bool Graphics::InitializeScene()
 		return false;
 	}
 
-	camera.SetProjectionValues(90, windowWidth, windowHeight, 1.0f, 1000.0f);
+	camera.SetProjectionValues(60, windowWidth, windowHeight, 1.0f, 1000.0f);
 	camera.SetPosition(0.0f, 0.0f, -5.0f);
 	ImGui::SetNextWindowSize(ImVec2(1000, 400));
 
+	InitGridModels();
 	InitArhimedeslModel();
 	InitFermatModel();
 	InitLemniscateOfBernoulliModel();

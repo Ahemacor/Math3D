@@ -16,7 +16,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 
 	Engine engine;
-	if (engine.Initialize(hInstance, "Title", "MyWindowClass", 1920, 1080))
+	if (engine.Initialize(hInstance, "Math curves", "MyWindowClass", 1920, 1080))
 	{
 		while (engine.ProcessMessages() == true)
 		{

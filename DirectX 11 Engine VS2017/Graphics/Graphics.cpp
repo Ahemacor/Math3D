@@ -56,18 +56,22 @@ void Graphics::RenderFunctionsImGui()
 	case ARHIMEDES:
 	{
 		enum { MIN, MAX, A };
-		static float param[] = { 0, 300, 1 };
+		static float param[] = { 0, 3.14f*10.0, 0.33f };
 
 		ImGui::Text("Archimedes spiral:");
 		ImGui::Text("r = %f * phi;    phi[%f, %f]", param[A], param[MIN], param[MAX]);
 
-		ImGui::SliderFloat("Min", &param[MIN], -300.0f, 300.0f);
-		ImGui::SliderFloat("Max", &param[MAX], -300.0f, 300.0f);
-		ImGui::SliderFloat("a", &param[A], -10.0f, 10.0f);
+		ImGui::SliderFloat("Min", &param[MIN], -3.14f*100, 3.14f*100);
+		ImGui::SliderFloat("Max", &param[MAX], -3.14f*100, 3.14f*100);
+		ImGui::SliderFloat("a", &param[A], -3.14f*3.0f, 3.14f*3.0f);
 
 		static XMFLOAT4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 		ImGui::ColorEdit4("Color", (float*)&color);
-
+		ImGui::Text("Z coordinate: %f", zCoord);
+		ImGui::SliderFloat("Z", &zCoord, -15.0f, +15.0f);
+		static bool enableSpherical = 0;
+		ImGui::Checkbox("Enable spherical coordinates", &enableSpherical);
+		arhimedesModel.cb.data.enableSpherical = enableSpherical;
 		if (ImGui::Button("Apply changes")) UpdateArhimedesModel(param[A], param[MIN], param[MAX], color);
 	}
 	break;
@@ -75,17 +79,21 @@ void Graphics::RenderFunctionsImGui()
 	case FERMAT:
 	{
 		enum { MIN, MAX, A };
-		static float param[] = { 0, 400, 1 };
+		static float param[] = { 0.0f, 3.14f*10.0, 2.5f };
 
 		ImGui::Text("Fermat's spiral:");
 		ImGui::Text("r = %f*sqrt(phi);    phi[%f, %f]", param[A], param[MIN], param[MAX]);
 
-		ImGui::SliderFloat("Max", &param[MAX], 0.0f, 400.0f);
-		ImGui::SliderFloat("a", &param[A], -10.0f, 10.0f);
+		ImGui::SliderFloat("Max", &param[MAX], 0.0f, 250.0f);
+		ImGui::SliderFloat("a", &param[A], -3.14f*3.0f, 3.14f*3.0f);
 
 		static XMFLOAT4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 		ImGui::ColorEdit4("Color", (float*)&color);
-
+		ImGui::Text("Z coordinate: %f", zCoord);
+		ImGui::SliderFloat("Z", &zCoord, -15.0f, +15.0f);
+		static bool enableSpherical = 0;
+		ImGui::Checkbox("Enable spherical coordinates", &enableSpherical);
+		fermatModel.cb.data.enableSpherical = enableSpherical;
 		if (ImGui::Button("Apply changes")) UpdateFermatModel(param[A], param[MIN], param[MAX], color);
 	}
 	break;
@@ -93,10 +101,10 @@ void Graphics::RenderFunctionsImGui()
 	case BERNOULLI:
 	{
 		enum { MIN, MAX, A };
-		static float param[] = { -3.14159f, 3.14159f, 1 };
+		static float param[] = { -3.14159f, 3.14159f, 5 };
 		static int scale = 2;
 		ImGui::Text("Lemniscate of Bernoulli:");
-		ImGui::Text(" r ^ 2 = %f ^ 2 * cos(%d * phi);    phi[%f, %f]", param[A], scale, param[MIN], param[MAX]);
+		ImGui::Text(" r^2 = %f^2 * cos(%d * phi);    phi[%f, %f]", param[A], scale, param[MIN], param[MAX]);
 		ImGui::SliderFloat("Min", &param[MIN], -3.14159f, 0.0f);
 		ImGui::SliderFloat("Max", &param[MAX], 0.0f, 3.14159f);
 		ImGui::SliderFloat("a", &param[A], 0.0f, 20.0f);
@@ -104,7 +112,11 @@ void Graphics::RenderFunctionsImGui()
 
 		static XMFLOAT4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 		ImGui::ColorEdit4("Color", (float*)&color);
-
+		ImGui::Text("Z coordinate: %f", zCoord);
+		ImGui::SliderFloat("Z", &zCoord, -15.0f, +15.0f);
+		static bool enableSpherical = 0;
+		ImGui::Checkbox("Enable spherical coordinates", &enableSpherical);
+		lemniscateOfBernoulliModel.cb.data.enableSpherical = enableSpherical;
 		if (ImGui::Button("Apply changes")) UpdateLemniscateOfBernoulliModel(param[A], param[MIN], param[MAX], scale, color);
 	}
 	break;
@@ -114,7 +126,6 @@ void Graphics::RenderFunctionsImGui()
 	default:
 		break;
 	}
-
 	ImGui::NewLine();
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::NewLine();
@@ -130,25 +141,23 @@ void Graphics::InitArhimedeslModel()
 	Model& model = arhimedesModel;
 	model.vs = commonVS;
 	model.ps = coloredPS;
-	model.topology = D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_LINESTRIP;
+	model.topology = D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
 	model.transformatin = XMMatrixIdentity();
 
-	float a = 1;
+	const float a = 0.33f;
 	float t_min = 0;
-	float t_max = 1000;
+	float t_max = 3.14f * 10.0;
 
 	std::vector<VertexCommon> vertices;
-
 	for (int i = 0; i < t_num; ++i)
 	{
 		const float t = lerp(t_min, t_max, i / t_num);
 
-		const float a = 1;
 		const float phi = t;
 		const float r = a * phi;
 		float x = r * cos(phi);
 		float y = r * sin(phi);
-		float z = 0;
+		float z = zCoord;
 
 		vertices.emplace_back(x, y, z);
 	}
@@ -182,7 +191,7 @@ void Graphics::UpdateArhimedesModel(float a, float t_min, float t_max, const XMF
 		const float r = a * phi;
 		float x = r * cos(phi);
 		float y = r * sin(phi);
-		float z = 0;
+		float z = zCoord;
 
 		vertices.emplace_back(x, y, z, color.x, color.y, color.z, color.w);
 	}
@@ -198,31 +207,31 @@ void Graphics::InitFermatModel()
 	model.topology = D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_LINESTRIP;
 	model.transformatin = XMMatrixIdentity();
 
-	float a = 1;
+	float a = 2.5f;
 	float t_min = 0;
-	float t_max = 1000;
+	float t_max = 3.14f * 10.0;
 
 	std::vector<VertexCommon> vertices;
 	// - branch
 	for (int i = (t_num / 2) - 1; i >= 0; --i)
 	{
-		const float t = lerp(t_min, t_max, i / t_num);
+		const float t = lerp(t_min, t_max, i / (t_num/2));
 		const float phi = t;
 		const float r = a * -sqrt(phi);
 		const float x = r * cos(phi);
 		const float y = r * sin(phi);
-		const float z = 0;
+		const float z = zCoord;
 		vertices.emplace_back(x, y, z);
 	}
 	// + branch
 	for (int i = 0; i < t_num/2; ++i)
 	{
-		const float t = lerp(t_min, t_max, i / t_num);
+		const float t = lerp(t_min, t_max, i / (t_num/2));
 		const float phi = t;
 		const float r = a * +sqrt(phi);
 		const float x = r * cos(phi);
 		const float y = r * sin(phi);
-		const float z = 0;
+		const float z = zCoord;
 		vertices.emplace_back(x, y, z);
 	}
 
@@ -251,23 +260,23 @@ void Graphics::UpdateFermatModel(float a, float t_min, float t_max, const XMFLOA
 	// - branch
 	for (int i = (t_num / 2) - 1; i >= 0; --i)
 	{
-		const float t = lerp(t_min, t_max, i / t_num);
+		const float t = lerp(t_min, t_max, i / (t_num/2));
 		const float phi = t;
 		const float r = a * -sqrt(phi);
 		const float x = r * cos(phi);
 		const float y = r * sin(phi);
-		const float z = 0;
+		const float z = zCoord;
 		vertices.emplace_back(x, y, z, color.x, color.y, color.z, color.w);
 	}
 	// + branch
 	for (int i = 0; i < t_num / 2; ++i)
 	{
-		const float t = lerp(t_min, t_max, i / t_num);
+		const float t = lerp(t_min, t_max, i / (t_num/2));
 		const float phi = t;
 		const float r = a * +sqrt(phi);
 		const float x = r * cos(phi);
 		const float y = r * sin(phi);
-		const float z = 0;
+		const float z = zCoord;
 		vertices.emplace_back(x, y, z, color.x, color.y, color.z, color.w);
 	}
 
@@ -282,7 +291,7 @@ void Graphics::InitLemniscateOfBernoulliModel()
 	model.topology = D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_LINESTRIP;
 	model.transformatin = XMMatrixIdentity();
 
-	const float a = 1;
+	const float a = 5;
 	const float t_min = 0;
 	const float t_max = 1000;
 	const float phi_scale = 2;
@@ -297,7 +306,7 @@ void Graphics::InitLemniscateOfBernoulliModel()
 		const float r = sqrt(pow(a, a_pow) * cos(phi*phi_scale));
 		const float x = r * cos(phi);
 		const float y = r * sin(phi);
-		const float z = 0;
+		const float z = zCoord;
 		vertices.emplace_back(x, y, z);
 	}
 
@@ -331,7 +340,7 @@ void Graphics::UpdateLemniscateOfBernoulliModel(float a, float t_min, float t_ma
 		const float r = sqrt(pow(a, 2) * cos(phi * phi_scale));
 		const float x = r * cos(phi);
 		const float y = r * sin(phi);
-		const float z = 0;
+		const float z = zCoord;
 		vertices.emplace_back(x, y, z, color.x, color.y, color.z, color.w);
 	}
 
@@ -349,6 +358,7 @@ void Graphics::InitGridModels()
 	model.transformatin = XMMatrixIdentity();
 
 	const int numOfLines = (gridMax - gridMin) / gridStep;
+	const int pointsPerLine = 100;
 
 	std::vector<VertexCommon> vertices;
 	vertices.emplace_back(gridMin, 0, 0, gridColor.x*2, gridColor.y*2, gridColor.z*2, gridColor.w);
@@ -688,7 +698,7 @@ bool Graphics::InitializeScene()
 	}
 
 	camera.SetProjectionValues(60, windowWidth, windowHeight, 1.0f, 1000.0f);
-	camera.SetPosition(0.0f, 0.0f, -5.0f);
+	camera.SetPosition(0.0f, 0.0f, -20.0f);
 	ImGui::SetNextWindowSize(ImVec2(1000, 400));
 
 	InitGridModels();

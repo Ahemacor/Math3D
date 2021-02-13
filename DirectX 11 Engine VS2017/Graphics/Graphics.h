@@ -104,6 +104,7 @@ private:
 	Model gridXZ;
 
 	const float t_num = 100000;
+	float zCoord = 0.0f;
 	Model arhimedesModel;
 	Model fermatModel;
 	Model lemniscateOfBernoulliModel;
